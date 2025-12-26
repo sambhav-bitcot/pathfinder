@@ -1,5 +1,5 @@
 "use server";
-import { ChangePasswordType, UpdateUserType } from "@/types/profile";
+// import { ChangePasswordType } from "@/types/profile";
 import { fetchGraphQLMutation, fetchGraphQLQuery } from "..";
 import {
   CHANGE_PASSWORD_MUTATION,
@@ -12,21 +12,44 @@ import {
   SIGN_UP_MUTATION,
   UPDATE_USER_MUTATION,
 } from "./query";
-import { SignInInput, SignInResponse, SignupFormType, SignUpRespose, TokenResponse } from "@/lib/types";
-import { RefreshTokenRes } from "@/types/authType";
+import { TokenResponse, UpdateUserType } from "@/utils/types/user";
+// import { RefreshTokenRes } from "@/types/authType";
+import {
+  SignInInput,
+  SignInResponse,
+  SignUpRespose,
+  SignupFormType,
+} from "@/utils/types/auth-type";
 
-export const signInAction = async ({variables,}: {variables: { input: SignInInput };}): Promise<SignInResponse> => {
-  const res = await fetchGraphQLMutation<SignInResponse>(SIGN_IN_MUTATION, variables);
+export const signInAction = async ({
+  variables,
+}: {
+  variables: { input: SignInInput };
+}): Promise<SignInResponse> => {
+  const res = await fetchGraphQLMutation<SignInResponse>(
+    SIGN_IN_MUTATION,
+    variables
+  );
+  
   return res as SignInResponse;
 };
-export const signUpAction = async (variables: { input: SignupFormType }): Promise<SignUpRespose> => {
-  const res = await fetchGraphQLMutation<SignUpRespose>(SIGN_UP_MUTATION, variables);
+
+
+export const signUpAction = async (variables: {
+  input: SignupFormType;
+}): Promise<SignUpRespose> => {
+  const res = await fetchGraphQLMutation<SignUpRespose>(
+    SIGN_UP_MUTATION,
+    variables
+  );
   return res as SignUpRespose;
 };
 
-export const changePasswordAction = async (form: ChangePasswordType): Promise<any> => {
+export const changePasswordAction = async (
+  form:any
+): Promise<any> => {
   const variables = {
-    input: {...form}
+    input: { ...form },
   };
   const res: any = await fetchGraphQLMutation<any>(
     CHANGE_PASSWORD_MUTATION,
@@ -57,11 +80,14 @@ export const resetPasswordAction = async ({
   return res;
 };
 
-export const getPresignedUrlAction = async (selectedFile: File): Promise<any> => {
+export const getPresignedUrlAction = async (
+  selectedFile: File
+): Promise<any> => {
   // Extract extension from file name reliably (e.g., 'xyz.docx' gets '.docx')
-  const extension = selectedFile.name.lastIndexOf('.') !== -1
-    ? selectedFile.name.substring(selectedFile.name.lastIndexOf('.'))
-    : '';
+  const extension =
+    selectedFile.name.lastIndexOf(".") !== -1
+      ? selectedFile.name.substring(selectedFile.name.lastIndexOf("."))
+      : "";
   const variables = {
     input: { extensions: [extension] },
   };
@@ -69,18 +95,25 @@ export const getPresignedUrlAction = async (selectedFile: File): Promise<any> =>
     GET_PRESIGNED_URL_MUTATION,
     variables
   );
-  debugger; 
+  debugger;
   return res;
 };
 
-export const updateUserAction = async (form: UpdateUserType, selectedFilePath?: string,profile?: any): Promise<any> => {
-  const { updateUserId, first_name, last_name, phone, } = form;
+export const updateUserAction = async (
+  form: UpdateUserType,
+  selectedFilePath?: string,
+  profile?: any
+): Promise<any> => {
+  const { updateUserId, first_name, last_name, phone } = form;
+  console.log("check");
+
+  console.log(form, selectedFilePath, profile);
 
   const updateUserInput: Record<string, any> = {
     first_name,
     last_name,
     phone,
-    ...(selectedFilePath && { file_path: selectedFilePath }), 
+    ...(selectedFilePath && { file_path: selectedFilePath }),
     ...(profile && { profile: { ...profile } }),
   };
   const variables = {
@@ -94,9 +127,11 @@ export const updateUserAction = async (form: UpdateUserType, selectedFilePath?: 
   return res;
 };
 
-export const refreshToken = async (refreshToken: string): Promise<RefreshTokenRes> => {
+export const refreshToken = async (
+  refreshToken: string
+): Promise<any> => {
   const variables = { refreshToken };
-  const res = await fetchGraphQLMutation<RefreshTokenRes>(
+  const res = await fetchGraphQLMutation<any>(
     REFRESH_TOKEN_MUTATION,
     variables
   );
@@ -105,12 +140,9 @@ export const refreshToken = async (refreshToken: string): Promise<RefreshTokenRe
 
 export const getUpdatedTokenAction = async () => {
   try {
-    const res = await fetchGraphQLQuery<TokenResponse>(
-      GET_USER_TOKEN
-    );
-    return (res as TokenResponse)?.gettoken?.tokenBalance as number;
-  } catch (error) {
+    const res = await fetchGraphQLQuery<TokenResponse>(GET_USER_TOKEN);
+    return res?.gettoken?.tokenBalance as number;
+  } catch {
     return false;
   }
 };
-

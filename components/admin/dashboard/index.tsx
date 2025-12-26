@@ -1,29 +1,15 @@
 "use client";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Users, DollarSign, Calendar, TrendingUp } from "lucide-react";
-import Link from "next/link";
-import { mockAdminUsers, mockAnalytics } from "@/lib/mock-data";
-import { useAuth } from "@/contexts/auth-context";
 import PageHeader from "@/components/ui/page-header";
 import QuickActionSection from "./quick-action-section";
 import NewUserSection from "./new-user-section";
 import StatsGridSection from "./stats-grid-section";
+import { useAppSelector } from "@/store/hooks";
 export default function AdminDashboard() {
-  const { user } = useAuth();
-  const pageHeading = `Welcome back ${
-    user && "," + user?.firstName + " " + user?.lastName
-  }!`;
-
-  const recentUsers = mockAdminUsers.slice(0, 3);
+  const { user } = useAppSelector((state) => state.auth);
+  const pageHeading =
+    user &&
+    `Welcome back ${user && "," + user?.first_name + " " + user?.last_name}!`;
 
   return (
     <div className="min-h-screen bg-background">

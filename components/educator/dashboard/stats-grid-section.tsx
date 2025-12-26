@@ -1,5 +1,6 @@
 import StatsCard from "@/components/ui/stats-card";
-import { mockEducatorEarnings, mockSessions } from "@/lib/mock-data";
+import {  mockSessions } from "@/lib/mock-data";
+import { useAppSelector } from "@/store/hooks";
 
 import {
   Calendar,
@@ -7,9 +8,8 @@ import {
   Users,
 } from "lucide-react";
 export default function StatsGridSection() {
-  const totalEarnings = mockEducatorEarnings
-    .filter((e) => e.status === "paid")
-    .reduce((sum, e) => sum + e.amount, 0);
+ const { token } = useAppSelector((state) => state.auth);
+
 
   const activeStudents = new Set(
     mockSessions.filter((s) => s.educatorId === "edu-1").map((s) => s.studentId)
@@ -21,7 +21,7 @@ export default function StatsGridSection() {
     {
       title: "Total Earnings",
       Icon: DollarSign,
-      data: totalEarnings,
+      data: token,
     },
     {
       title: " Active Students",
@@ -39,7 +39,7 @@ export default function StatsGridSection() {
     <div className="grid gap-4 md:grid-cols-3">
       {statsItems.map((items, idx) => (
         <StatsCard
-          key={idx}
+          key={idx+1}
           title={items.title}
           Icon={items.Icon}
           data={items.data}

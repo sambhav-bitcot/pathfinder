@@ -3,10 +3,10 @@
 import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
+import { Spinner } from "./spinner";
 import type { UserRole } from "@/lib/types";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
-import { appLogout } from "@/store/actions/auth-action";
+import { appLogout, getTokenAction } from "@/store/actions/auth-action";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,8 +42,8 @@ function getProfilePath(role: UserRole) {
 
 export function Header() {
   const dispatch = useAppDispatch();
-  const { user } = useAppSelector((state) => state.auth);
-  const userRole = user?.role?.toLowerCase() ;
+  const { user, token } = useAppSelector((state) => state.auth);
+  const userRole = user?.role?.toLowerCase();
   const [navItems, setNavItems] = useState<typeof ADMIN_NAV_ITEMS | null>(null);
   const router = useRouter();
   const pathname = usePathname();
@@ -61,6 +61,13 @@ export function Header() {
       router.replace(PUBLIC_ROUTE.LOGIN);
     }
   }, [pathname]);
+
+  useEffect(() => {
+    if (!token) {
+      dispatch(getTokenAction());
+      console.log(token);
+    }
+  }, [user, token]);
   const handleLogout = async () => {
     await dispatch(appLogout);
 
@@ -114,7 +121,7 @@ export function Header() {
                   }}
                 >
                   <Coins className="text-primary size-4" />
-                  <span>10000</span>
+                  <span>{token || <Spinner />}</span>
                   <span className="text-muted-foreground">token</span>
                 </Button>
               )}
@@ -127,11 +134,12 @@ export function Header() {
                   >
                     <Avatar>
                       <AvatarImage
-                        src={user?.avatar || "/placeholder.svg"}
-                        alt={user?.firstName}
+                        src={user?.avatar_path || undefined}
+                        alt={user?.first_name}
                       />
-                      <AvatarFallback>
-                        {user?.firstName?.charAt(0)}
+                      <AvatarFallback className="text-primary text-lg border border-muted-foreground/20">
+                        {user?.first_name?.charAt(0) +
+                          user?.last_name?.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -139,7 +147,7 @@ export function Header() {
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium">{user?.firstName}</p>
+                      <p className="text-sm font-medium">{user?.first_name}</p>
                       <p className="text-xs text-muted-foreground">
                         {user?.email}
                       </p>

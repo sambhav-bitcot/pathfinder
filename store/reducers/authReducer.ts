@@ -1,10 +1,10 @@
-import { User } from "@/lib/types";
+import { User } from "@/utils/types/user";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import Cookies from "js-cookie";
 
-let access_token = null
-let refresh_token = null
-let user = null
+let access_token = null;
+let refresh_token = null;
+let user = null;
 
 access_token = Cookies.get("access_token");
 refresh_token = Cookies.get("refresh_token");
@@ -21,31 +21,35 @@ const initialState: AuthState = {
   access_token: access_token ?? null,
   refresh_token: refresh_token ?? null,
   user: user ?? null,
-  token: ""
+  token: "",
 };
 
 export const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    login: (state :any, action: PayloadAction<any>) => {
+    login: (state: any, action: PayloadAction<any>) => {
+      console.log(action.payload);
+      
       Cookies.set("access_token", action.payload.access_token);
       Cookies.set("refresh_token", action.payload.refresh_token);
-      Cookies.set("user", JSON.stringify(action.payload.user))
+      Cookies.set("user", JSON.stringify(action.payload.user));
       state.access_token = action.payload.access_token;
       state.refresh_token = action.payload.refresh_token;
       state.user = action.payload.user;
-      state.token = action.payload.token
-      
+      state.token = action.payload.token;
     },
-    updateUser: (state:any, action: PayloadAction<any>) => {
-      Cookies.set("user", JSON.stringify({ ...state.user, ...action.payload.user }))
+    updateUser: (state: any, action: PayloadAction<any>) => {
+      Cookies.set(
+        "user",
+        JSON.stringify({ ...state.user, ...action.payload.user })
+      );
       state.user = { ...state.user, ...action.payload.user };
     },
-    updateToken: (state:any, action: PayloadAction<any>) => {
-      state.token = action.payload
+    updateToken: (state: any, action: PayloadAction<any>) => {
+      state.token = action.payload;
     },
-    logout: (state:any) => {
+    logout: (state: any) => {
       Cookies.remove("access_token");
       Cookies.remove("refresh_token");
       Cookies.remove("user");
@@ -53,10 +57,10 @@ export const authSlice = createSlice({
       state.access_token = "";
       state.refresh_token = "";
       state.user = "";
-      state.token = ""
+      state.token = "";
     },
-  }
+  },
 });
-export const { login, updateUser, logout,updateToken } = authSlice.actions;
+export const { login, updateUser, logout, updateToken } = authSlice.actions;
 
 export default authSlice.reducer;

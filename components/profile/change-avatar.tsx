@@ -10,22 +10,24 @@ export default function ChangeAvatar({
   fallback,
   onChange,
 }: {
-  className?: string;
-  previewURL?: string;
-  fallback?: string;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => any;
+  readonly className?: string;
+  readonly previewURL: string | undefined;
+  readonly fallback?: string;
+  readonly onChange?: (e: React.ChangeEvent<HTMLInputElement>) => any;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   return (
     <div className={`flex gap-3 items-center ${className}`}>
-      <Avatar className="size-16">
-        <AvatarImage
-          className="rounded-full"
-          src={previewURL || ""}
-          alt="Profile"
-        />
-        <AvatarFallback>{fallback || "U"}</AvatarFallback>
+      <Avatar className="size-16   border rounded-full flex flex-col justify-center items-center">
+        
+          <AvatarImage
+            className="rounded-full"
+            src={previewURL || undefined}
+            alt="Profile"
+          />
+        
+        <AvatarFallback className="text-3xl">{fallback || "U"}</AvatarFallback>
 
         {/* <AvatarFallback>{user?.name?.[0] || "U"}</AvatarFallback> */}
       </Avatar>

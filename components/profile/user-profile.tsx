@@ -4,59 +4,103 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEffect, useRef, useState } from "react";
 import { CardContent } from "../ui/card";
-import { useAuth } from "@/contexts/auth-context";
-import { type StudentProfileUpdate } from "@/lib/types";
 import ChangeAvatar from "./change-avatar";
 import SimpleReactValidator from "simple-react-validator";
 import { formatPhone } from "@/lib/utils";
+import { useAppSelector, useAppDispatch } from "@/store/hooks";
+import { updateUser } from "@/store/actions/auth-action";
+import { useToast } from "@/hooks/use-toast";
+
+import { getPresignedUrl } from "@/utils/common-service";
 
 function UserProfileUpdate() {
-  const [, forceUpdate] = useState(false);
+  const { toast } = useToast();
 
+  const dispatch = useAppDispatch();
+  const [, forceUpdate] = useState(0);
+  const { user } = useAppSelector((state) => state.auth);
   const validator = useRef(
     new SimpleReactValidator({
-      autoForceUpdate: { forceUpdate: () => forceUpdate((v) => !v) },
+      autoForceUpdate: { forceUpdate: () => forceUpdate((v) => v + 1) },
     })
   );
   const defaultForm = {
-    firstName: "",
-    lastName: "",
+    first_name: "",
+    last_name: "",
     phone: "",
-    avatar: "",
+    avatar_path: "",
   };
-  const { user } = useAuth();
 
-  const [formData, setFormData] = useState<StudentProfileUpdate>(defaultForm);
+  const [formData, setFormData] = useState(defaultForm);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewURL, setPreviewURL] = useState<string>("");
+  const [previewURL, setPreviewURL] = useState<string | undefined>(undefined);
 
   const [isLoading, setIsLoading] = useState(false);
 
   // Load user profile data
   useEffect(() => {
-    if (user) {
+    if (user && !selectedFile) {
+      console.log(user);
+
       setFormData({
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phone: user.phone,
-        avatar: user.avatar,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        phone: user.phone || "",
+        avatar_path: user.avatar_path || "",
       });
-      setPreviewURL(user.avatar || "");
+      setPreviewURL(user.avatar_path || undefined);
     }
   }, [user]);
 
   // Form Submit
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (validator.current.allValid()) {
-      setIsLoading(true);
+    if (!validator.current.allValid()) {
       console.log("Updated Values:", formData);
+      validator.current.showMessages();
+
       return;
     }
+    let file_path: any;
+    if (selectedFile) {
+      file_path = await getPresignedUrl(selectedFile, toast);
+      console.log(file_path);
+    }
+    setIsLoading(true);
+    let form = {
+      updateUserId: user.id,
+      first_name: formData.first_name,
+      last_name: formData.last_name,
+      phone: formData.phone,
+    };
+    try {
+      let res = await dispatch(updateUser(form, file_path));
+      console.log(res);
 
-    validator.current.showMessages();
+      if (res.success) {
+        toast({
+          title: "Profile Updation",
+          description: res?.message || "Profile Successfully Updated",
+        });
+      } else {
+        toast({
+          title: "Profile Updation",
+          description:
+            res?.message || "Failed to update profile. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch {
+      toast({
+        title: "Profile Updation",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Input Change Handler
@@ -65,7 +109,7 @@ function UserProfileUpdate() {
 
     // PHONE LOGIC
     if (name === "phone") {
-      const digitsOnly = value.replace(/\D/g, "");
+      const digitsOnly = value.replaceAll(/\D/g, "");
 
       if (digitsOnly.length > 10) return;
 
@@ -92,8 +136,8 @@ function UserProfileUpdate() {
       <ChangeAvatar
         previewURL={previewURL}
         onChange={handleImageChange}
-        fallback={`${formData.firstName?.charAt(0) || "U"}${
-          formData.lastName?.charAt(0) || "N"
+        fallback={`${formData.first_name?.charAt(0).toUpperCase() || "U"}${
+          formData.last_name?.charAt(0).toUpperCase() || "N"
         }`}
       />
 
@@ -102,38 +146,38 @@ function UserProfileUpdate() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/*First Name */}
             <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
+              <Label htmlFor="first_name">First Name</Label>
               <Input
-                id="firstName"
-                name="firstName"
+                id="first_name"
+                name="first_name"
                 type="text"
-                value={formData.firstName}
+                value={formData.first_name}
                 onChange={handleInputChange}
                 placeholder="John Doe"
               />
               <span className="text-red-500 text-sm">
                 {validator.current.message(
-                  "firstName",
-                  formData.firstName,
+                  "first_name",
+                  formData.first_name,
                   "required|min:3"
                 )}
               </span>
             </div>
             {/* Last Name */}
             <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
+              <Label htmlFor="last_name">Last Name</Label>
               <Input
-                id="lastName"
-                name="lastName"
+                id="last_name"
+                name="last_name"
                 type="text"
-                value={formData.lastName}
+                value={formData.last_name}
                 onChange={handleInputChange}
                 placeholder="John Doe"
               />
               <span className="text-red-500 text-sm">
                 {validator.current.message(
-                  "lastName",
-                  formData.lastName,
+                  "last_name",
+                  formData.last_name,
                   "required|min:3"
                 )}
               </span>

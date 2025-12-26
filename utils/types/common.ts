@@ -7,7 +7,7 @@ export interface User {
   firstName: string;
   lastName: string;
   role: UserRole;
-  avatar?: string;
+  avatar_path?: string;
   grade?: string;
   specialization?: string;
   topic?: string;

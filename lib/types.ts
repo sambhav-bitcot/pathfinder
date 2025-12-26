@@ -4,8 +4,8 @@ export interface User {
   id: string;
   email: string;
   title?: string;
-  firstName: string;
-  lastName: string;
+  first_name: string;
+  last_name: string;
   role: UserRole;
   avatar?: string;
   grade?: string;
@@ -61,6 +61,7 @@ export interface EducatorProfileUpdate {
   specialization?: string;
 }
 export interface AdminUserUpdate {
+ id?:string;
   firstName?: string;
   lastName?: string;
   phone?: string;

@@ -1,3 +1,4 @@
+import strict from "assert/strict";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -5,10 +6,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 // Format phone number- (123)-456-7890
-export const formatPhone = (num: string = "") => {
+export const formatPhone = (num: string = ""):string => {
   if (num.length <= 3) return num;
   if (num.length <= 6) return `(${num.slice(0, 3)})-${num.slice(3)}`;
   return `(${num.slice(0, 3)})-${num.slice(3, 6)}-${num.slice(6, 10)}`;
+
 };
 
 export const passwordResetAPI = {

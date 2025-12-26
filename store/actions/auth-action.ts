@@ -8,14 +8,15 @@ import {
   signUpAction,
   updateUserAction,
 } from "@/utils/graphql/auth/action";
-import {  SignupFormType, TokenResponse } from "@/lib/types";
-import { SignInInput } from "@/utils/types/auth-type";
-import { UpdateUserType } from "@/types/profile";
+// import { TokenResponse } from "@/lib/types";
+import { SignInInput, SignupFormType } from "@/utils/types/auth-type";
+import { UpdateUserType } from "@/utils/types/user";
 
 export const login = (form: SignInInput) => async (dispatch: AppDispatch) => {
   try {
     const res = await signInAction({ variables: { input: form } });
-    
+    console.log(res);
+
     console.log(res, "resssss");
     if (res?.signIn?.success) {
       const { accessToken, refreshToken, user, token } = res.signIn;
@@ -31,8 +32,8 @@ export const login = (form: SignInInput) => async (dispatch: AppDispatch) => {
     return {
       message: res.signIn.message,
       success: true,
-      data:{user:res.signIn.user}
-    };;
+      data: { user: res.signIn.user },
+    };
   } catch (err: any) {
     return {
       message: err.message as string,
@@ -40,15 +41,30 @@ export const login = (form: SignInInput) => async (dispatch: AppDispatch) => {
     };
   }
 };
+
 export const signUp = async (userData: SignupFormType) => {
-  const res = await signUpAction({ input: userData });
-  if (typeof res === "string") {
+  try {
+    console.log(userData);
+
+    const res = await signUpAction({ input: userData });
+    console.log(res);
+    if (res?.signUp) {
+      return {
+        message: res.signUp.message,
+        success: res.signUp.success,
+      };
+    } else {
+      return {
+        message: res.message,
+        success: res.success,
+      };
+    }
+  } catch (err: any) {
     return {
-      message: res,
+      message: err.message as string,
       success: false,
     };
   }
-  return res;
 };
 
 export const appLogout = async (dispatch: AppDispatch) => {
@@ -70,13 +86,27 @@ export const updateUser =
   async (dispatch: AppDispatch) => {
     try {
       const res = await updateUserAction(form, selectedFilePath, profile);
-      if (res?.updateUser.success) {
+      console.log(res);
+
+      if (res?.updateUser?.success) {
         dispatch(authReducer.updateUser({ user: { ...res.updateUser.user } }));
+
+        return {
+          message: res.updateUser.message,
+          success: res.updateUser.success,
+        };
       }
-      return true;
-    } catch (err) {
+
+      return {
+        message: res.updateUser?.message,
+        success: res.updateUser?.success,
+      };
+    } catch (err: any) {
       console.log(err);
-      return false;
+      return {
+        message: err?.message as string,
+        success: false,
+      };
     }
   };
 

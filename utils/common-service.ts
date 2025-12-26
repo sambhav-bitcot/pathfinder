@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-'use client';
-import { BehaviorSubject } from 'rx';
+// 'use client';
+// import { BehaviorSubject } from 'rx';
 import { toast } from 'react-toastify';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -12,15 +12,15 @@ import Cookies from 'js-cookie';
 import { getPresignedUrlAction } from './graphql/auth/action';
 
 // for global loader service
-export const isLoading = new BehaviorSubject<boolean>(false);
+// export const isLoading = new BehaviorSubject<boolean>(false);
 
-export const isDialogOpen = new BehaviorSubject<any>({
-  open: false,
-  data: { message: 'Are you Sure?', title: '' },
-  cancelText: 'Cancel',
-  confirmText: 'Okay',
-  onConfirm: () => { }
-});
+// export const isDialogOpen = new BehaviorSubject<any>({
+//   open: false,
+//   data: { message: 'Are you Sure?', title: '' },
+//   cancelText: 'Cancel',
+//   confirmText: 'Okay',
+//   onConfirm: () => { }
+// });
 
 export const generateUUID = () => {
   let dt = new Date().getTime();

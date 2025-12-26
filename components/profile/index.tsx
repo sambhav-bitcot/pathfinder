@@ -4,11 +4,10 @@ import PasswordResetPage from "./password-reset";
 import { Card } from "../ui/card";
 import EducatorProfileUpdate from "./educator-profile";
 import UserProfileUpdate from "./user-profile";
-import { useAuth } from "@/contexts/auth-context";
 import PageHeader from "../ui/page-header";
+import { useAppSelector } from "@/store/hooks";
 function Profile() {
-  const { user } = useAuth();
-
+const {user}=useAppSelector(state=>state.auth)
   const isUser = ["admin", "student"].includes(user?.role || "");
   const isEducator = user?.role === "educator";
   return (

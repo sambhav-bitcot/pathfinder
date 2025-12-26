@@ -4,54 +4,63 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEffect, useRef, useState } from "react";
 import { CardContent } from "../ui/card";
-import { useAuth } from "@/contexts/auth-context";
-import { type EducatorProfileUpdate } from "@/lib/types";
 import ChangeAvatar from "./change-avatar";
 import SimpleReactValidator from "simple-react-validator";
 import { formatPhone } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { updateUser } from "@/store/actions/auth-action";
+import { useAppSelector, useAppDispatch } from "@/store/hooks";
 
+import { getPresignedUrl } from "@/utils/common-service";
 function EducatorProfileUpdate() {
   const { toast } = useToast();
 
-  const [, forceUpdate] = useState(false);
+  const [, setForce] = useState(false);
 
   const validator = useRef(
     new SimpleReactValidator({
-      autoForceUpdate: { forceUpdate: () => forceUpdate((v) => !v) },
+      autoForceUpdate: { forceUpdate: () => setForce((v) => !v) },
     })
   );
   const defaultForm = {
-    firstName: "",
-    lastName: "",
-    description: "",
-    specialization: "",
-    topic: "",
-    phone: "",
-    avatar: "",
-  };
-  const { user } = useAuth();
+    first_name: "",
+    last_name: "",
 
-  const [formData, setFormData] = useState<EducatorProfileUpdate>(defaultForm);
+    phone: "",
+    avatar_path: "",
+    profile: {
+      session_description: "",
+      specialization: "",
+      session_topic: "",
+    },
+  };
+
+  const dispatch = useAppDispatch();
+
+  const { user } = useAppSelector((state) => state.auth);
+
+  const [formData, setFormData] = useState(defaultForm);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewURL, setPreviewURL] = useState<string>("");
+  const [previewURL, setPreviewURL] = useState<string | undefined>(undefined);
 
   const [isLoading, setIsLoading] = useState(false);
-  const [success, setSuccess] = useState(true);
 
   useEffect(() => {
-    if (user) {
+    if (user && !selectedFile) {
+      console.log(user);
       setFormData({
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phone: user.phone,
-        avatar: user.avatar,
-        description: "",
-        specialization: "",
-        topic: "",
+        first_name: user.first_name,
+        last_name: user.last_name,
+        phone: user?.phone || "",
+        avatar_path: user.avatar_path || "",
+        profile: {
+          session_description: user.profile?.session_description || "",
+          specialization: user.profile?.specialization || "",
+          session_topic: user.profile?.session_topic || "",
+        },
       });
-      setPreviewURL(user.avatar || "");
+      setPreviewURL(user.avatar_path || undefined);
     }
   }, [user]);
 
@@ -61,7 +70,7 @@ function EducatorProfileUpdate() {
 
     // PHONE LOGIC
     if (name === "phone") {
-      const digitsOnly = value.replace(/\D/g, "");
+      const digitsOnly = value.replaceAll(/\D/g, "");
 
       if (digitsOnly.length > 10) return;
 
@@ -74,46 +83,80 @@ function EducatorProfileUpdate() {
     validator.current.showMessageFor(name);
   };
 
+  const handleNestedInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let { name, value } = e.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      profile: { ...prev.profile, [name]: value },
+    }));
+    validator.current.showMessageFor(name);
+  };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    console.log(file);
+
     setSelectedFile(file);
     setPreviewURL(URL.createObjectURL(file));
   };
 
   // SUBMIT
-  const handleFormSubmit = (e: React.FormEvent) => {
+  // Form Submit
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!validator.current.allValid()) {
+      console.log("Updated Values:", formData);
       validator.current.showMessages();
       return;
     }
-    //   setIsLoading(true);
-    try {
-      //handle api logic
-      console.log("click");
 
-      if (success)
-        toast({
-          variant: "default",
-          title: "Profile Update",
-          description: "Profile successfully updated",
-        });
-      if (!success)
-        toast({
-          variant: "destructive",
-          title: "Profile Update",
-          description: "Profile Updation Failed",
-        });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Profile Update",
-        description: "Profile Updation Failed",
-      });
+    setIsLoading(true);
+    let file_path: any;
+    if (selectedFile) {
+      file_path = await getPresignedUrl(selectedFile, toast);
+      console.log(file_path);
     }
-    console.log("Final Submitted:", formData);
-    return;
+
+    let form = {
+      updateUserId: user.id,
+      first_name: formData.first_name,
+      last_name: formData.last_name,
+      phone: formData.phone,
+    };
+    let profile = {
+      session_description: formData.profile?.session_description,
+      specialization: formData.profile?.specialization,
+      session_topic: formData.profile?.session_topic,
+    };
+    try {
+      let res = await dispatch(updateUser(form, file_path, profile));
+      console.log(res);
+
+      if (res.success) {
+        toast({
+          title: "Profile Updation",
+          description: res?.message || "Profile Successfully Updated",
+        });
+      } else {
+        toast({
+          title: "Profile Updation",
+          description:
+            res?.message || "Failed to update profile. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch {
+      toast({
+        title: "Profile Updation",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -121,8 +164,8 @@ function EducatorProfileUpdate() {
       <ChangeAvatar
         previewURL={previewURL}
         onChange={handleImageChange}
-        fallback={`${formData.firstName?.charAt(0) || "U"}${
-          formData.lastName?.charAt(0) || "N"
+        fallback={`${formData.first_name?.charAt(0) || "U"}${
+          formData.last_name?.charAt(0) || "N"
         }`}
       />
 
@@ -131,38 +174,38 @@ function EducatorProfileUpdate() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* First NAME */}
             <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
+              <Label htmlFor="first_name">First Name</Label>
               <Input
-                id="firstName"
-                name="firstName"
+                id="first_name"
+                name="first_name"
                 type="text"
-                value={formData.firstName}
+                value={formData.first_name}
                 onChange={handleInputChange}
                 placeholder="John"
               />
               <span className="text-red-500 text-sm">
                 {validator.current.message(
-                  "firstName",
-                  formData.firstName,
+                  "first_name",
+                  formData.first_name,
                   "required|min:3"
                 )}
               </span>
             </div>
             {/*Last NAME */}
             <div className="space-y-2">
-              <Label htmlFor="lastName">Full Name</Label>
+              <Label htmlFor="last_name">Last Name</Label>
               <Input
-                id="lastName"
-                name="lastName"
+                id="last_name"
+                name="last_name"
                 type="text"
-                value={formData.lastName}
+                value={formData.last_name}
                 onChange={handleInputChange}
                 placeholder="Doe"
               />
               <span className="text-red-500 text-sm">
                 {validator.current.message(
-                  "lastName",
-                  formData.lastName,
+                  "last_name",
+                  formData.last_name,
                   "required|min:3"
                 )}
               </span>
@@ -184,7 +227,7 @@ function EducatorProfileUpdate() {
                 id="phone"
                 name="phone"
                 type="text"
-                value={formatPhone(formData.phone as string)}
+                value={formatPhone(formData.phone)}
                 onChange={handleInputChange}
                 placeholder="(123)-456-7890"
               />
@@ -207,48 +250,52 @@ function EducatorProfileUpdate() {
                 id="specialization"
                 name="specialization"
                 type="text"
-                value={formData.specialization}
-                onChange={handleInputChange}
+                value={formData.profile.specialization}
+                onChange={handleNestedInputChange}
                 placeholder="specialization"
               />
               <span className="text-red-500 text-sm">
                 {validator.current.message(
                   "specialization",
-                  formData.specialization,
+                  formData.profile.specialization,
                   "required"
                 )}
               </span>
             </div>{" "}
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="session_description">Description</Label>
               <Input
-                id="description"
-                name="description"
+                id="session_description"
+                name="session_description"
                 type="text"
-                value={formData.description}
-                onChange={handleInputChange}
+                value={formData.profile.session_description}
+                onChange={handleNestedInputChange}
                 placeholder="description"
               />
               <span className="text-red-500 text-sm">
                 {validator.current.message(
-                  "description",
-                  formData.description,
+                  "session_description",
+                  formData.profile.session_description,
                   "required"
                 )}
               </span>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="topic">Topic</Label>
+              <Label htmlFor="session_topic">Topic</Label>
               <Input
-                id="topic"
-                name="topic"
+                id="session_topic"
+                name="session_topic"
                 type="text"
-                value={formData.topic}
-                onChange={handleInputChange}
-                placeholder="topic"
+                value={formData.profile.session_topic}
+                onChange={handleNestedInputChange}
+                placeholder="session_topic"
               />
               <span className="text-red-500 text-sm">
-                {validator.current.message("topic", formData.topic, "required")}
+                {validator.current.message(
+                  "session_topic",
+                  formData.profile.session_topic,
+                  "required"
+                )}
               </span>
             </div>
           </div>
